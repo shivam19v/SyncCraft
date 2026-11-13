@@ -1,0 +1,46 @@
+services:
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redis-data:/data"]
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  doc:
+    build: ./services/doc
+    environment:
+      PORT: "50051"
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis: { condition: service_healthy }
+
+  gateway:
+    build: ./services/gateway
+    environment:
+      PORT: "8080"
+      REDIS_URL: redis://redis:6379
+      DOC_SERVICE_ADDR: doc:50051
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      ALLOWED_ORIGINS: localhost:3000
+    ports: ["8080:8080"]
+    depends_on:
+      redis: { condition: service_healthy }
+      doc: { condition: service_started }
+
+  web:
+    build: ./apps/web
+    environment:
+      DOC_SERVICE_ADDR: doc:50051
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      GATEWAY_PUBLIC_URL: ws://localhost:8080
+    ports: ["3000:3000"]
+    depends_on:
+      - doc
+      - gateway
+
+volumes:
+  redis-data:

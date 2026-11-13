@@ -1,0 +1,12 @@
+{
+  "name": "synccraft",
+  "private": true,
+  "description": "Tooling for protobuf code generation",
+  "scripts": {
+    "proto": "buf generate"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.50.0",
+    "ts-proto": "^2.6.0"
+  }
+}

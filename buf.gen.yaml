@@ -1,0 +1,31 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: synccraft/gateway/gen
+plugins:
+  # Go (gateway) – remote plugins, nothing to install locally
+  - remote: buf.build/protocolbuffers/go
+    out: services/gateway/gen
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go
+    out: services/gateway/gen
+    opt: paths=source_relative
+  # TypeScript (doc service, Node ESM -> needs .js import suffix)
+  - local: node_modules/.bin/protoc-gen-ts_proto
+    out: services/doc/src/gen
+    opt:
+      - esModuleInterop=true
+      - outputServices=nice-grpc
+      - outputServices=generic-definitions
+      - useExactTypes=false
+      - importSuffix=.js
+  # TypeScript (Next.js server, bundler resolution)
+  - local: node_modules/.bin/protoc-gen-ts_proto
+    out: apps/web/src/gen
+    opt:
+      - esModuleInterop=true
+      - outputServices=nice-grpc
+      - outputServices=generic-definitions
+      - useExactTypes=false

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package synccraft.v1;
+
+// Metadata for a collaborative document. The document *content* lives in a
+// Yjs CRDT state that is stored and merged by the document service.
+message Document {
+  string id = 1;
+  string title = 2;
+  int64 created_at_ms = 3;
+  int64 updated_at_ms = 4;
+}
+
+message CreateDocumentRequest { string title = 1; }
+message CreateDocumentResponse { Document document = 1; }
+
+message GetDocumentRequest { string id = 1; }
+// `document` is unset when the id does not exist.
+message GetDocumentResponse { Document document = 1; }
+
+message ListDocumentsRequest { int32 limit = 1; }
+message ListDocumentsResponse { repeated Document documents = 1; }
+
+message GetDocumentStateRequest { string doc_id = 1; }
+message GetDocumentStateResponse {
+  // Full Yjs update (Y.encodeStateAsUpdate). Empty for a brand-new document.
+  bytes state_update = 1;
+  // Yjs state vector of `state_update`, used by clients to compute a minimal diff.
+  bytes state_vector = 2;
+}
+
+message ApplyUpdatesRequest {
+  string doc_id = 1;
+  // Raw Yjs updates, in the order they were observed by the gateway.
+  repeated bytes updates = 2;
+}
+message ApplyUpdatesResponse {
+  uint32 applied = 1;
+  uint32 rejected = 2;
+}
+
+service DocumentService {
+  rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+  rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+  rpc GetDocumentState(GetDocumentStateRequest) returns (GetDocumentStateResponse);
+  rpc ApplyUpdates(ApplyUpdatesRequest) returns (ApplyUpdatesResponse);
+}
